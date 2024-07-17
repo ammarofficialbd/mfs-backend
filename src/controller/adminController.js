@@ -3,7 +3,7 @@ const Transaction = require('../models/transaction');
 const mongoose = require('mongoose');
 
 
-exports.viewUsers = async (req, res) => {
+exports.viewUsers = async (_req, res) => {
     try {
         const users = await User.find();
         res.send(users);

@@ -194,8 +194,9 @@ exports.getBalance = async (req, res) => {
 
 exports.getTransactionHistory = async (req, res) => {
     try {
+        const user = await User.findById(req.user._id);
         const transactions = await Transaction.find({
-            $or: [{ from: req.user._id }, { to: req.user._id }]
+            $or: [{ from: user.mobileNumber}, { to: user.mobileNumber }]
         })
         .sort({ date: -1 })
         .limit(10);

@@ -60,7 +60,7 @@ exports.loginUser = async (req, res) => {
 exports.sendMoney = async (req, res) => {
     try {
        
-        const {from, to, amount, pin } = req.body;
+        const {to, amount, pin } = req.body;
        // console.log(req.body);
         const user = await User.findById(new mongoose.Types.ObjectId(req.user._id));
         
@@ -78,7 +78,7 @@ exports.sendMoney = async (req, res) => {
         if (user.balance < totalAmount) {
             return res.status(400).send({ error: 'Insufficient balance.' });
         }
-        const recipient = await User.findById(new mongoose.Types.ObjectId(to));
+        const recipient = await User.findById({mobileNumber : to});
         if (!recipient) {
             return res.status(404).send({ error: 'Recipient not found.' });
         }
@@ -90,8 +90,8 @@ exports.sendMoney = async (req, res) => {
         await user.save();
         await recipient.save();
         const transaction = new Transaction({
-            from: user._id,
-            to: recipient._id,
+            from: user.mobileNumber,
+            to: to,
             amount,
             fee,
             type: 'send'
@@ -103,6 +103,39 @@ exports.sendMoney = async (req, res) => {
     }
 };
 
+exports.cashInRequest = async (req , res) => {
+    try {
+        const {to, amount , pin} = req.body;
+        const user = await User.findById(new mongoose.Types.ObjectId(req.user._id))
+
+        if(!user){
+            return res.status(404).send({ error: 'User not found.' });
+        }
+        if (!(await user.comparePin(pin))) {
+            return res.status(400).send({ error: 'Invalid PIN.' });
+        }
+        if (user.balance < amount) {
+            return res.status(400).send({ error: 'Insufficient balance.' });
+        }
+        const agent = await User.findOne({mobileNumber : to})
+       if(!agent){
+        return res.status(404).send({ error: 'Agent not found.' });
+       }
+
+       const transaction = new Transaction({
+        from : user.mobileNumber,
+        to: to, 
+        amount,
+        type: 'cashin',
+    });
+
+    await transaction.save();
+
+        res.status(201).send({message : "SuccessFully request"}, transaction);
+    } catch (error) {
+        res.status(500).send({ error: error.message });
+    }
+}
 
 exports.createCashoutRequest = async (req, res) => {
     try {
@@ -128,16 +161,21 @@ exports.createCashoutRequest = async (req, res) => {
         if (user.balance < amount) {
             return res.status(400).send({ error: 'Insufficient balance.' });
         }
-    
+        const agent = await User.findOne({mobileNumber : to})
+
+       if(!agent){
+        return res.status(404).send({ error: 'Agent not found.' });
+       }
+
         const transaction = new Transaction({
             from : user.mobileNumber,
-            to: to, // assuming the agent will be the recipient initially
+            to: to, 
             amount,
             type: 'cashout',
         });
 
         await transaction.save();
-        res.status(201).send(transaction);
+        res.status(201).send({message : "SuccessFully request"},transaction);
     } catch (error) {
         res.status(500).send({ error: error.message });
     }

@@ -7,6 +7,8 @@ router.post('/register', userController.registerUser);
 router.post('/login', userController.loginUser);
 router.post('/send-money', authMiddleware.authenticate,userController.sendMoney);
 router.post('/cashout', authMiddleware.authenticate, userController.createCashoutRequest);
+router.post('/cashin', authMiddleware.authenticate, userController.cashInRequest);
+
 
 
 module.exports = router;

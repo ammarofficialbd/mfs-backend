@@ -1,8 +1,8 @@
 const mongoose = require('mongoose');
 
 const transactionSchema = new mongoose.Schema({
-    from: { type: String, ref: 'User', required: true, unique: true },
-    to: { type: String, ref: 'User', required: true, unique: true },
+    from: { type: String, ref: 'User', required: true},
+    to: { type: String, ref: 'User', required: true},
     amount: { type: Number, required: true },
     fee: { type: Number, default: 0 },
     type: { type: String, enum: ['send', 'cashout', 'cashin'], required: true },

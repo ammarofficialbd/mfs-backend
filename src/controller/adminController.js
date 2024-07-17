@@ -12,6 +12,14 @@ exports.viewUsers = async (_req, res) => {
     }
 };
 
+exports.viewAllTransactions = async (req, res) => {
+    try {
+        const transactions = await Transaction.find().sort({ date: -1 });
+        res.send(transactions);
+    } catch (err) {
+        res.status(500).send({ error: 'Server error. Could not retrieve transactions.' });
+    }
+};
 exports.searchUser = async (req, res) => {
     try {
         const { name } = req.query;
@@ -48,11 +56,3 @@ exports.manageUserAccount = async (req, res) => {
     }
 };
 
-exports.viewAllTransactions = async (req, res) => {
-    try {
-        const transactions = await Transaction.find().sort({ date: -1 });
-        res.send(transactions);
-    } catch (err) {
-        res.status(500).send({ error: 'Server error. Could not retrieve transactions.' });
-    }
-};

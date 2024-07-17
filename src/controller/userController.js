@@ -1,7 +1,7 @@
 const User = require('../models/user');
 const Transaction = require('../models/transaction');
 const jwt = require('../utils/jwt');
-
+const mongoose = require('mongoose');
 exports.registerUser = async (req, res) => {
     try {
         const { name, pin, mobileNumber, role } = req.body;
@@ -30,7 +30,7 @@ exports.loginUser = async (req, res) => {
         console.log(req.body);
 
    
-       //console.log(mobileNumber, pin);
+       console.log(mobileNumber, pin);
        
        
         const user = await User.findOne({mobileNumber});
@@ -59,8 +59,13 @@ exports.loginUser = async (req, res) => {
 
 exports.sendMoney = async (req, res) => {
     try {
-        const { to, amount, pin } = req.body;
-        const user = await User.findById(req.user._id);
+       
+        const {from, to, amount, pin } = req.body;
+       // console.log(req.body);
+        const user = await User.findById(new mongoose.Types.ObjectId(req.user._id));
+        
+
+        //console.log(user);
         if (!(await user.comparePin(pin))) {
             return res.status(400).send({ error: 'Invalid PIN.' });
         }
@@ -68,16 +73,20 @@ exports.sendMoney = async (req, res) => {
             return res.status(400).send({ error: 'Minimum transaction amount is 50 Taka.' });
         }
         const fee = amount > 100 ? 5 : 0;
-        const totalAmount = amount + fee;
+        const totalAmount = Number(amount) + Number(fee);
+        console.log(totalAmount);
         if (user.balance < totalAmount) {
             return res.status(400).send({ error: 'Insufficient balance.' });
         }
-        const recipient = await User.findById(to);
+        const recipient = await User.findById(new mongoose.Types.ObjectId(to));
         if (!recipient) {
             return res.status(404).send({ error: 'Recipient not found.' });
         }
+
         user.balance -= totalAmount;
-        recipient.balance += amount;
+
+        recipient.balance += Number(amount);
+
         await user.save();
         await recipient.save();
         const transaction = new Transaction({
@@ -93,6 +102,48 @@ exports.sendMoney = async (req, res) => {
         res.status(500).send({ error: 'Server error. Could not complete transaction.' });
     }
 };
+
+
+exports.createCashoutRequest = async (req, res) => {
+    try {
+        const { to, amount, pin } = req.body;
+
+        if (amount < 50) {
+            return res.status(400).send({ error: 'Minimum cashout amount is 50 Taka.' });
+        }
+        
+
+        const user = await User.findOne({mobileNumber : req.user.mobileNumber});
+
+
+        console.log(user);
+        if (!user) {
+            return res.status(404).send({ error: 'User not found.' });
+        }
+
+        if (!(await user.comparePin(pin))) {
+            return res.status(400).send({ error: 'Invalid PIN.' });
+        }
+
+        if (user.balance < amount) {
+            return res.status(400).send({ error: 'Insufficient balance.' });
+        }
+    
+        const transaction = new Transaction({
+            from : user.mobileNumber,
+            to: to, // assuming the agent will be the recipient initially
+            amount,
+            type: 'cashout',
+        });
+
+        await transaction.save();
+        res.status(201).send(transaction);
+    } catch (error) {
+        res.status(500).send({ error: error.message });
+    }
+};
+
+
 
 exports.getBalance = async (req, res) => {
     try {
@@ -115,3 +166,4 @@ exports.getTransactionHistory = async (req, res) => {
         res.status(500).send({ error: 'Server error. Could not retrieve transactions.' });
     }
 };
+

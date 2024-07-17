@@ -1,5 +1,6 @@
 const User = require('../models/user');
 const Transaction = require('../models/transaction');
+const mongoose = require('mongoose');
 
 
 exports.viewUsers = async (req, res) => {
@@ -24,7 +25,9 @@ exports.searchUser = async (req, res) => {
 exports.manageUserAccount = async (req, res) => {
     try {
         const { userId, action } = req.body;
-        const user = await User.findById(userId);
+        console.log(req.body);
+        const user = await User.findById(new mongoose.Types.ObjectId(userId));
+        console.log(user);
         if (!user) {
             return res.status(404).send({ error: 'User not found.' });
         }

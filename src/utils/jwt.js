@@ -2,7 +2,7 @@ const jwt = require('jsonwebtoken');
 
 const  JWT_SECRET = `asdasfasdfsadfsda`;
 
-console.log(JWT_SECRET, "jwt");
+//console.log(JWT_SECRET, "jwt");
 
 exports.generateToken = (user) => {
 
